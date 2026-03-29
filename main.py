@@ -1,4 +1,5 @@
 import pygame
+
 pygame.init()
 
 # Screen
@@ -6,13 +7,13 @@ screen = pygame.display.set_mode((800, 400))
 pygame.display.set_caption("Mini Adventure")
 
 # Colors
-WHITE = (255,255,255)
-BLUE = (0,0,255)
-GREEN = (100,200,100)
-YELLOW = (255,215,0)
-PURPLE = (200,0,200)
-BLACK = (0,0,0)
-RED = (255,0,0)
+WHITE = (255, 255, 255)
+BLUE = (0, 0, 255)
+GREEN = (100, 200, 100)
+YELLOW = (255, 215, 0)
+PURPLE = (200, 0, 200)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
 
 font = pygame.font.SysFont(None, 40)
 small_font = pygame.font.SysFont(None, 30)
@@ -20,7 +21,83 @@ small_font = pygame.font.SysFont(None, 30)
 clock = pygame.time.Clock()
 
 # Clouds
-clouds = [[100,80],[300,50],[500,100],[700,70]]
+clouds = [[100, 80], [300, 50], [500, 100], [700, 70]]
+
+
+# ---------------- ЗАГРУЗКА КАРТИНОК ----------------
+def load_images():
+    """Загружает картинки или создаёт их, если файлы не найдены"""
+    images = {}
+
+    # Игрок (пытаемся загрузить из файла)
+    try:
+        images['player'] = pygame.image.load('player.png')
+        images['player'] = pygame.transform.scale(images['player'], (30, 30))
+    except:
+        # Создаём простую картинку игрока
+        surf = pygame.Surface((30, 30), pygame.SRCALPHA)
+        pygame.draw.circle(surf, BLUE, (15, 15), 12)
+        pygame.draw.circle(surf, (255, 255, 255), (10, 10), 3)  # глаз
+        pygame.draw.circle(surf, (255, 255, 255), (20, 10), 3)  # глаз
+        images['player'] = surf
+
+    # Монстр
+    try:
+        images['monster'] = pygame.image.load('monster.png')
+        images['monster'] = pygame.transform.scale(images['monster'], (30, 30))
+    except:
+        surf = pygame.Surface((30, 30), pygame.SRCALPHA)
+        pygame.draw.rect(surf, RED, (0, 0, 30, 30))
+        pygame.draw.circle(surf, WHITE, (8, 8), 4)  # глаз
+        pygame.draw.circle(surf, WHITE, (22, 8), 4)  # глаз
+        pygame.draw.circle(surf, BLACK, (8, 8), 2)  # зрачок
+        pygame.draw.circle(surf, BLACK, (22, 8), 2)  # зрачок
+        pygame.draw.arc(surf, BLACK, (8, 15, 14, 10), 0, 3.14, 2)  # рот
+        images['monster'] = surf
+
+    # Монетка
+    try:
+        images['coin'] = pygame.image.load('coin.png')
+        images['coin'] = pygame.transform.scale(images['coin'], (15, 15))
+    except:
+        surf = pygame.Surface((15, 15), pygame.SRCALPHA)
+        pygame.draw.circle(surf, YELLOW, (7, 7), 7)
+        pygame.draw.circle(surf, (255, 255, 100), (7, 7), 5)
+        pygame.draw.line(surf, (200, 150, 0), (4, 7), (10, 7), 2)  # блик
+        images['coin'] = surf
+
+    # Портал
+    try:
+        images['door'] = pygame.image.load('portal.png')
+        images['door'] = pygame.transform.scale(images['door'], (30, 40))
+    except:
+        surf = pygame.Surface((30, 40), pygame.SRCALPHA)
+        pygame.draw.ellipse(surf, PURPLE, (0, 0, 30, 40))
+        pygame.draw.ellipse(surf, (255, 0, 255), (5, 5, 20, 30))
+        images['door'] = surf
+
+    # Платформа
+    try:
+        images['platform'] = pygame.image.load('platform.png')
+    except:
+        surf = pygame.Surface((100, 10))
+        surf.fill((80, 150, 80))
+        pygame.draw.rect(surf, (50, 120, 50), (0, 0, 100, 3))  # деталь
+        images['platform'] = surf
+
+    # Фон (опционально)
+    try:
+        images['background'] = pygame.image.load('background.jpg')
+        images['background'] = pygame.transform.scale(images['background'], (800, 400))
+    except:
+        images['background'] = None
+
+    return images
+
+
+# Загружаем картинки
+images = load_images()
+
 
 # ---------------- BUTTON ----------------
 def draw_button(text, x, y, w, h, color):
@@ -31,29 +108,42 @@ def draw_button(text, x, y, w, h, color):
     txt = small_font.render(text, True, BLACK)
     screen.blit(txt, (x + 10, y + 10))
 
-    if x < mouse[0] < x+w and y < mouse[1] < y+h:
+    if x < mouse[0] < x + w and y < mouse[1] < y + h:
         if click[0] == 1:
             pygame.time.delay(150)
             return True
     return False
 
+
 # ---------------- BACKGROUND ----------------
 def draw_background():
-    for i in range(400):
-        color = (135 - i//5, 206 - i//4, 235 - i//6)
-        pygame.draw.line(screen, color, (0, i), (800, i))
+    # Рисуем фон (если есть картинка фона)
+    if images['background']:
+        screen.blit(images['background'], (0, 0))
+    else:
+        # Градиент неба
+        for i in range(400):
+            color = (135 - i // 5, 206 - i // 4, 235 - i // 6)
+            pygame.draw.line(screen, color, (0, i), (800, i))
 
-    pygame.draw.polygon(screen, (90, 120, 90), [(0,300),(200,180),(400,300)])
-    pygame.draw.polygon(screen, (70, 100, 70), [(300,300),(500,150),(700,300)])
+        # Холмы
+        pygame.draw.polygon(screen, (90, 120, 90), [(0, 300), (200, 180), (400, 300)])
+        pygame.draw.polygon(screen, (70, 100, 70), [(300, 300), (500, 150), (700, 300)])
 
+    # Облака
     for cloud in clouds:
         cloud[0] += 0.3
         if cloud[0] > 850:
             cloud[0] = -100
 
         pygame.draw.circle(screen, WHITE, (int(cloud[0]), cloud[1]), 20)
-        pygame.draw.circle(screen, WHITE, (int(cloud[0])+25, cloud[1]+5), 25)
-        pygame.draw.circle(screen, WHITE, (int(cloud[0])+50, cloud[1]), 20)
+        pygame.draw.circle(screen, WHITE, (int(cloud[0]) + 25, cloud[1] + 5), 25)
+        pygame.draw.circle(screen, WHITE, (int(cloud[0]) + 50, cloud[1]), 20)
+
+    # Солнце
+    pygame.draw.circle(screen, (255, 255, 180), (700, 80), 50)
+    pygame.draw.circle(screen, YELLOW, (700, 80), 40)
+
 
 # ---------------- LEVEL ----------------
 def load_level(level):
@@ -61,37 +151,36 @@ def load_level(level):
 
     base = [pygame.Rect(0, 370, 800, 30)]
 
-    # Platforms moved UP (lower Y values)
     levels = {
         1: {
-            "platforms": [(150,280,120,10),(350,230,120,10),(550,120,120,10)],
-            "coins": [(170,250),(370,200),(570,90)],
-            "monsters": [(600,340,-1)]
+            "platforms": [(150, 280, 120, 10), (350, 230, 120, 10), (550, 120, 120, 10)],
+            "coins": [(170, 250), (370, 200), (570, 90)],
+            "monsters": [(600, 340, -1)]
         },
         2: {
-            "platforms": [(150,270,120,10),(350,150,120,10),(550,170,120,10)],
-            "coins": [(170,240),(370,120),(570,140),(700,340)],
-            "monsters": [(700,340,-1)]
+            "platforms": [(150, 270, 120, 10), (350, 150, 120, 10), (550, 170, 120, 10)],
+            "coins": [(170, 240), (370, 120), (570, 140), (700, 340)],
+            "monsters": [(700, 340, -1)]
         },
         3: {
-            "platforms": [(120,290,100,10),(260,250,100,10),(420,120,100,10),(600,170,100,10)],
-            "coins": [(140,260),(280,220),(440,90),(620,140)],
-            "monsters": [(500,340,-1),(650,340,-1)]
+            "platforms": [(120, 290, 100, 10), (260, 250, 100, 10), (420, 120, 100, 10), (600, 170, 100, 10)],
+            "coins": [(140, 260), (280, 220), (440, 90), (620, 140)],
+            "monsters": [(500, 340, -1), (650, 340, -1)]
         },
         4: {
-            "platforms": [(100,270,100,10),(250,220,100,10),(400,170,100,10),(550,120,100,10)],
-            "coins": [(120,240),(270,190),(420,140),(570,90)],
-            "monsters": [(300,340,-1),(600,340,-1)]
+            "platforms": [(100, 270, 100, 10), (250, 220, 100, 10), (400, 170, 100, 10), (550, 120, 100, 10)],
+            "coins": [(120, 240), (270, 190), (420, 140), (570, 90)],
+            "monsters": [(300, 340, -1), (600, 340, -1)]
         },
         5: {
-            "platforms": [(100,290,120,10),(300,250,120,10),(500,210,120,10),(650,150,120,10)],
-            "coins": [(120,260),(320,220),(520,180),(670,130),(750,340)],
-            "monsters": [(200,340,-1),(500,340,-1)]
+            "platforms": [(100, 290, 120, 10), (300, 250, 120, 10), (500, 210, 120, 10), (650, 150, 120, 10)],
+            "coins": [(120, 260), (320, 220), (520, 180), (670, 130), (750, 340)],
+            "monsters": [(200, 340, -1), (500, 340, -1)]
         },
         6: {
-            "platforms": [(150,270,100,10),(300,220,100,10),(450,170,100,10),(600,120,100,10)],
-            "coins": [(170,240),(320,190),(470,140),(620,90)],
-            "monsters": [(250,340,-1),(450,340,-1),(650,340,-1)]
+            "platforms": [(150, 270, 100, 10), (300, 220, 100, 10), (450, 170, 100, 10), (600, 120, 100, 10)],
+            "coins": [(170, 240), (320, 190), (470, 140), (620, 90)],
+            "monsters": [(250, 340, -1), (450, 340, -1), (650, 340, -1)]
         }
     }
 
@@ -107,6 +196,7 @@ def load_level(level):
     door = pygame.Rect(750, 330, 30, 40)
     return platforms, coins, door
 
+
 # ---------------- RESET ----------------
 def reset_game():
     global player, vy, lives, score, level, platforms, coins, door, stars
@@ -119,6 +209,7 @@ def reset_game():
     level = 1
 
     platforms, coins, door = load_level(level)
+
 
 # ---------------- SCREENS ----------------
 def start_screen():
@@ -142,6 +233,7 @@ def start_screen():
                 pygame.quit()
                 exit()
 
+
 def game_over_screen():
     while True:
         draw_background()
@@ -162,6 +254,7 @@ def game_over_screen():
             if e.type == pygame.QUIT:
                 pygame.quit()
                 exit()
+
 
 def win_screen():
     while True:
@@ -184,6 +277,7 @@ def win_screen():
                 pygame.quit()
                 exit()
 
+
 # ---------------- GAME FUNCTIONS ----------------
 def move_player(keys):
     global vy, on_ground
@@ -200,6 +294,7 @@ def move_player(keys):
     vy += 0.5
     player.y += vy
 
+
 def handle_collisions():
     global vy, on_ground
     on_ground = False
@@ -209,6 +304,7 @@ def handle_collisions():
             player.bottom = p.top
             vy = 0
             on_ground = True
+
 
 def update_monsters():
     global lives, vy, stars
@@ -229,6 +325,7 @@ def update_monsters():
             else:
                 lose_life()
 
+
 def collect_coins():
     global score
     for c in coins[:]:
@@ -236,11 +333,13 @@ def collect_coins():
             coins.remove(c)
             score += 1
 
+
 def lose_life():
     global lives, vy
     lives -= 1
     player.x, player.y = 50, 300
     vy = 0
+
 
 def next_level():
     global level, platforms, coins, door, vy
@@ -257,33 +356,42 @@ def next_level():
     player.x, player.y = 50, 300
     vy = 0
 
-# ---------------- DRAW ----------------
+
+# ---------------- DRAW С КАРТИНКАМИ ----------------
 def draw():
     draw_background()
 
-    pygame.draw.circle(screen, (255, 255, 180), (700, 80), 50)
-    pygame.draw.circle(screen, YELLOW, (700, 80), 40)
+    # Земля
+    pygame.draw.rect(screen, (50, 180, 50), (0, 360, 800, 40))
 
-    pygame.draw.rect(screen, (50,180,50), (0, 360, 800, 40))
-
+    # Платформы с картинками
     for p in platforms:
-        pygame.draw.rect(screen, GREEN, p)
+        # Масштабируем картинку под размер платформы
+        plat_img = pygame.transform.scale(images['platform'], (p.width, p.height))
+        screen.blit(plat_img, (p.x, p.y))
 
+    # Монетки с картинками
     for c in coins:
-        pygame.draw.circle(screen, YELLOW, c.center, 7)
+        screen.blit(images['coin'], (c.x, c.y))
 
+    # Монстры с картинками
     for m in monsters:
-        pygame.draw.rect(screen, RED, m["rect"])
+        screen.blit(images['monster'], (m["rect"].x, m["rect"].y))
 
-    pygame.draw.rect(screen, PURPLE, door)
-    pygame.draw.rect(screen, BLUE, player)
+    # Портал с картинкой
+    screen.blit(images['door'], (door.x, door.y))
 
-    screen.blit(small_font.render(f"Lives: {lives}", True, BLACK), (10,10))
-    screen.blit(small_font.render(f"Coins: {score}", True, BLACK), (10,35))
-    screen.blit(small_font.render(f"Level: {level}", True, BLACK), (10,60))
-    screen.blit(small_font.render(f"Stars: {stars}", True, BLACK), (10,85))
+    # Игрок с картинкой
+    screen.blit(images['player'], (player.x, player.y))
+
+    # UI текст
+    screen.blit(small_font.render(f"Lives: {lives}", True, BLACK), (10, 10))
+    screen.blit(small_font.render(f"Coins: {score}", True, BLACK), (10, 35))
+    screen.blit(small_font.render(f"Level: {level}", True, BLACK), (10, 60))
+    screen.blit(small_font.render(f"Stars: {stars}", True, BLACK), (10, 85))
 
     pygame.display.update()
+
 
 # ---------------- MAIN ----------------
 start_screen()
